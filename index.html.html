@@ -1,14 +1,14 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Ponto Georreferenciado</title>
+    <title>Sistema de Ponto Multi-Local</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .hidden { display: none; }
-        .active-tab { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
+        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen">
@@ -17,7 +17,7 @@
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-gray-100">
             <div class="text-center mb-8">
                 <div class="inline-block p-4 bg-blue-100 rounded-2xl text-blue-600 mb-4">
-                    <i class="fas fa-lock text-2xl"></i>
+                    <i class="fas fa-user-check text-2xl"></i>
                 </div>
                 <h1 class="text-2xl font-bold">Bem-vindo</h1>
                 <p class="text-gray-500 text-sm">Controle de Acesso e Ponto</p>
@@ -43,109 +43,148 @@
         <header class="p-6 bg-blue-600 text-white rounded-b-[2rem] shadow-lg">
             <div class="flex justify-between items-center">
                 <div>
-                    <p class="text-blue-100 text-sm">Bem-vindo,</p>
+                    <p class="text-blue-100 text-sm italic">Prestador Autenticado</p>
                     <h2 class="text-xl font-bold">Ricardo Silva</h2>
                 </div>
-                <button onclick="navigateTo('screen-login')" class="bg-blue-500 p-2 rounded-lg"><i class="fas fa-power-off"></i></button>
+                <button onclick="navigateTo('screen-login')" class="bg-blue-500 p-2 rounded-lg hover:bg-blue-400 transition"><i class="fas fa-sign-out-alt"></i></button>
             </div>
             <div class="mt-4 flex items-center gap-2 text-sm bg-blue-700/50 w-fit px-3 py-1 rounded-full">
-                <i class="fas fa-calendar-day"></i> <span id="current-date">Sábado, 27 de Dezembro</span>
+                <i class="fas fa-map-marker-alt"></i> <span id="current-location-status">Detectando local...</span>
             </div>
         </header>
 
         <main class="flex-1 p-6 space-y-6">
-            <div id="gps-status" class="p-4 rounded-2xl border-2 border-dashed border-gray-200 text-center">
-                <p class="text-gray-500 text-sm italic">Status: <span class="text-emerald-500 font-bold uppercase tracking-tight">Pronto para registro</span></p>
-            </div>
-
             <div class="grid gap-4">
-                <button id="btn-entrada" onclick="processarRegisto('ENTRADA')" class="flex items-center justify-between p-6 bg-emerald-500 text-white rounded-2xl shadow-lg active:scale-95 transition">
-                    <div class="text-left"><span class="block text-xs opacity-80 font-bold uppercase">Check-in</span><span class="text-xl font-black italic">ENTRADA</span></div>
-                    <i class="fas fa-sign-in-alt text-3xl"></i>
+                <button id="btn-entrada" onclick="handlePonto('ENTRADA')" class="flex items-center justify-between p-6 bg-emerald-500 text-white rounded-2xl shadow-lg active:scale-95 transition">
+                    <div class="text-left"><span class="block text-xs opacity-80 font-bold uppercase tracking-widest">Início</span><span class="text-xl font-black italic uppercase">Registrar Entrada</span></div>
+                    <i class="fas fa-play-circle text-3xl"></i>
                 </button>
 
-                <button id="btn-saida" onclick="processarRegisto('SAÍDA')" class="flex items-center justify-between p-6 bg-rose-500 text-white rounded-2xl shadow-lg active:scale-95 transition">
-                    <div class="text-left"><span class="block text-xs opacity-80 font-bold uppercase">Check-out</span><span class="text-xl font-black italic">SAÍDA</span></div>
-                    <i class="fas fa-sign-out-alt text-3xl"></i>
+                <button id="btn-saida" onclick="handlePonto('SAÍDA')" class="flex items-center justify-between p-6 bg-rose-500 text-white rounded-2xl shadow-lg active:scale-95 transition">
+                    <div class="text-left"><span class="block text-xs opacity-80 font-bold uppercase tracking-widest">Fim</span><span class="text-xl font-black italic uppercase">Registrar Saída</span></div>
+                    <i class="fas fa-stop-circle text-3xl"></i>
                 </button>
             </div>
 
-            <div>
-                <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><i class="fas fa-history text-blue-500"></i> Hoje</h3>
-                <div class="bg-gray-50 rounded-2xl p-4 text-sm text-gray-600" id="recent-log">Nenhum registro realizado hoje.</div>
+            <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                <h3 class="text-blue-700 font-bold text-sm mb-2 uppercase tracking-wider">Histórico de Hoje</h3>
+                <div id="prestador-log" class="text-sm text-blue-600 italic">Aguardando registro...</div>
             </div>
         </main>
         
-        <footer class="p-4 text-center">
-            <button onclick="navigateTo('screen-admin')" class="text-gray-300 text-[10px] uppercase font-bold hover:text-blue-500 transition">Acesso Administrativo</button>
+        <footer class="p-4 text-center border-t">
+            <button onclick="navigateTo('screen-admin')" class="text-gray-400 text-[10px] font-bold hover:text-blue-600 transition uppercase tracking-widest">Painel Administrativo</button>
         </footer>
     </div>
 
-    <div id="screen-admin" class="hidden min-h-screen p-4 md:p-10 bg-gray-50">
+    <div id="screen-admin" class="hidden min-h-screen p-4 md:p-8 bg-gray-50">
         <div class="max-w-6xl mx-auto">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div>
-                    <h1 class="text-3xl font-black text-gray-900 tracking-tight">RELATÓRIO DE ACESSO</h1>
-                    <p class="text-gray-500">Histórico de prestadores ativos e inativos</p>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="baixarRelatorioCSV()" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-emerald-700 transition">
-                        <i class="fas fa-file-csv"></i> EXPORTAR CSV
-                    </button>
-                    <button onclick="navigateTo('screen-prestador')" class="bg-white border px-6 py-3 rounded-xl font-bold hover:bg-gray-100 transition">VOLTAR</button>
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-black text-gray-900 tracking-tight italic">GESTOR PRO</h1>
+                <button onclick="navigateTo('screen-prestador')" class="text-blue-600 font-bold"><i class="fas fa-chevron-left mr-2"></i>Voltar</button>
+            </div>
+
+            <div class="flex gap-6 mb-6 border-b text-sm font-bold uppercase tracking-tighter">
+                <button onclick="switchTab('tab-relatorios')" id="btn-tab-relatorios" class="tab-active pb-2">Relatórios</button>
+                <button onclick="switchTab('tab-locais')" id="btn-tab-locais" class="pb-2 text-gray-400">Cadastrar Locais</button>
+            </div>
+
+            <div id="tab-relatorios" class="space-y-6">
+                <div class="bg-white rounded-3xl shadow-sm border overflow-hidden">
+                    <div class="p-6 border-b flex justify-between items-center bg-gray-50/50">
+                        <h3 class="font-bold text-gray-700 uppercase text-xs tracking-widest">Registros por Local</h3>
+                        <button onclick="exportarCSV()" class="bg-emerald-600 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-emerald-700 transition">
+                            <i class="fas fa-file-download mr-2"></i>BAIXAR CSV
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-50 text-gray-400 uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-4">Prestador</th>
+                                    <th class="p-4">Local identificado</th>
+                                    <th class="p-4">Data</th>
+                                    <th class="p-4 text-center">Entrada</th>
+                                    <th class="p-4 text-center">Saída</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y">
+                                <tr class="hover:bg-blue-50/50 transition">
+                                    <td class="p-4 font-bold">Ricardo Silva</td>
+                                    <td class="p-4 font-medium text-blue-600">Escritório Central</td>
+                                    <td class="p-4">27/12/2025</td>
+                                    <td class="p-4 text-center font-mono font-bold text-emerald-600">08:05</td>
+                                    <td class="p-4 text-center font-mono text-gray-300">--:--</td>
+                                </tr>
+                                <tr class="opacity-50 grayscale bg-gray-50">
+                                    <td class="p-4 italic">Maria Oliveira</td>
+                                    <td class="p-4">Casa Norte</td>
+                                    <td class="p-4">26/12/2025</td>
+                                    <td class="p-4 text-center font-mono">09:12</td>
+                                    <td class="p-4 text-center font-mono">18:05</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-[2rem] shadow-xl overflow-hidden border">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-400">
-                            <tr>
-                                <th class="px-6 py-4">Prestador</th>
-                                <th class="px-6 py-4 text-center">Status</th>
-                                <th class="px-6 py-4">Data</th>
-                                <th class="px-6 py-4">Entrada</th>
-                                <th class="px-6 py-4">Saída</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100" id="table-body">
-                            <tr class="hover:bg-blue-50 transition">
-                                <td class="px-6 py-4 font-semibold">Ricardo Silva</td>
-                                <td class="px-6 py-4 text-center"><span class="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black rounded-full uppercase">Ativo</span></td>
-                                <td class="px-6 py-4 text-sm">27/12/2025</td>
-                                <td class="px-6 py-4 font-mono font-bold text-blue-600">08:05</td>
-                                <td class="px-6 py-4 font-mono text-gray-400 italic">--:--</td>
-                            </tr>
-                            <tr class="bg-gray-50 opacity-60">
-                                <td class="px-6 py-4 font-medium text-gray-500 italic">Maria Oliveira</td>
-                                <td class="px-6 py-4 text-center"><span class="px-3 py-1 bg-gray-200 text-gray-500 text-[10px] font-black rounded-full uppercase">Inativo</span></td>
-                                <td class="px-6 py-4 text-sm">20/12/2025</td>
-                                <td class="px-6 py-4 font-mono">09:00</td>
-                                <td class="px-6 py-4 font-mono">18:00</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div id="tab-locais" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                    <h3 class="font-bold text-lg mb-4 text-gray-800">Novo Local de Serviço</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase">Nome do Local</label>
+                            <input type="text" id="admin-nome-local" placeholder="Ex: Escritório Centro ou Casa Praia" class="w-full p-4 mt-1 bg-gray-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-400 uppercase">Coordenadas (GPS)</label>
+                            <div class="flex gap-2 mt-1">
+                                <input type="text" id="admin-coords" placeholder="Lat, Lon" class="flex-1 p-4 bg-gray-200 border rounded-2xl text-gray-600 font-mono text-sm outline-none" readonly>
+                                <button onclick="capturarLocalizacaoAdmin()" class="bg-blue-600 text-white px-6 rounded-2xl hover:bg-blue-700 transition">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="salvarLocalNaLista()" class="mt-6 w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-emerald-700 transition uppercase tracking-widest">
+                        CADASTRAR E ATIVAR LOCAL
+                    </button>
+                </div>
+                
+                <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                    <h3 class="font-bold text-gray-400 uppercase text-xs mb-4 tracking-widest">Locais Cadastrados</h3>
+                    <div id="lista-locais-admin" class="space-y-2">
+                        </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO ---
-        const CONFIG = {
-            LAT_LOCAL: -29.447066, // Substitua pela sua latitude real
-            LON_LOCAL: -50.579431, // Substitua pela sua longitude real
-            RAIO_MAX_METROS: 100
-        };
+        // --- BASE DE DADOS SIMULADA ---
+        let bancoLocais = [
+            { id: 1, nome: "Escritório Central", lat: -23.56168, lon: -46.65598, raio: 150 },
+            { id: 2, nome: "Casa Norte", lat: -23.50000, lon: -46.60000, raio: 150 }
+        ];
 
-        // --- NAVEGAÇÃO ---
+        // --- NAVEGAÇÃO E TABS ---
         function navigateTo(screenId) {
             document.querySelectorAll('[id^="screen-"]').forEach(s => s.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
-            window.scrollTo(0, 0);
         }
 
-        // --- GEOLOCALIZAÇÃO ---
+        function switchTab(tabId) {
+            document.getElementById('tab-relatorios').classList.add('hidden');
+            document.getElementById('tab-locais').classList.add('hidden');
+            document.getElementById('btn-tab-relatorios').classList.remove('tab-active');
+            document.getElementById('btn-tab-locais').classList.remove('tab-active');
+            
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('tab-active');
+        }
+
+        // --- LÓGICA DE GEOLOCALIZAÇÃO ---
         function calcularDistancia(lat1, lon1, lat2, lon2) {
             const R = 6371e3;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -154,67 +193,108 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        function processarRegisto(tipo) {
-            const btn = tipo === 'ENTRADA' ? document.getElementById('btn-entrada') : document.getElementById('btn-saida');
-            const originalContent = btn.innerHTML;
-
+        function handlePonto(tipo) {
+            const btn = event.currentTarget;
+            const original = btn.innerHTML;
+            
             btn.disabled = true;
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-2xl"></i><span class="ml-2">VALIDANDO GPS...</span>`;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin text-3xl"></i>`;
 
             if (!navigator.geolocation) {
                 alert("GPS não suportado.");
-                restaurarBotao(btn, originalContent);
+                restaurarBotao(btn, original);
                 return;
             }
 
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const dist = calcularDistancia(pos.coords.latitude, pos.coords.longitude, CONFIG.LAT_LOCAL, CONFIG.LON_LOCAL);
-                    
-                    if (dist <= CONFIG.RAIO_MAX_METROS) {
-                        alert(`✅ ${tipo} registrada!\nDistância: ${Math.round(dist)}m do local.`);
-                        document.getElementById('recent-log').innerHTML = `<i class="fas fa-check-circle text-emerald-500"></i> ${tipo} registrada às ${new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
-                    } else {
-                        alert(`❌ BLOQUEADO!\nVocê está a ${Math.round(dist)}m do local.\nO limite é ${CONFIG.RAIO_MAX_METROS}m.`);
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const uLat = pos.coords.latitude;
+                const uLon = pos.coords.longitude;
+                let localEncontrado = null;
+
+                bancoLocais.forEach(local => {
+                    if (calcularDistancia(uLat, uLon, local.lat, local.lon) <= local.raio) {
+                        localEncontrado = local;
                     }
-                    restaurarBotao(btn, originalContent);
-                },
-                (err) => {
-                    alert("Erro ao acessar GPS. Verifique as permissões.");
-                    restaurarBotao(btn, originalContent);
-                },
-                { enableHighAccuracy: true }
-            );
+                });
+
+                if (localEncontrado) {
+                    alert(`✅ ${tipo} efetuada em: ${localEncontrado.nome}`);
+                    document.getElementById('prestador-log').innerHTML = `<i class="fas fa-check-circle mr-2 text-emerald-500"></i>${tipo} em <strong>${localEncontrado.nome}</strong> às ${new Date().toLocaleTimeString()}`;
+                    document.getElementById('current-location-status').innerText = localEncontrado.nome;
+                } else {
+                    alert("❌ BLOQUEADO: Você não está em nenhum dos seus locais de serviço.");
+                }
+                restaurarBotao(btn, original);
+            }, () => {
+                alert("Erro ao acessar GPS.");
+                restaurarBotao(btn, original);
+            }, { enableHighAccuracy: true });
         }
 
-        function restaurarBotao(btn, content) {
+        function restaurarBotao(btn, html) {
             btn.disabled = false;
-            btn.innerHTML = content;
+            btn.innerHTML = html;
         }
 
-        // --- EXPORTAÇÃO CSV ---
-        function baixarRelatorioCSV() {
+        // --- LÓGICA DE ADMIN (CADASTRO DE LOCAIS) ---
+        function capturarLocalizacaoAdmin() {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                document.getElementById('admin-coords').value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+                alert("GPS capturado! Este é o local onde você está agora.");
+            });
+        }
+
+        function salvarLocalNaLista() {
+            const nome = document.getElementById('admin-nome-local').value;
+            const coords = document.getElementById('admin-coords').value;
+            
+            if (!nome || !coords) return alert("Preencha o nome e capture a localização.");
+
+            const [lat, lon] = coords.split(',').map(Number);
+            const novoLocal = { id: Date.now(), nome, lat, lon, raio: 150 };
+            
+            bancoLocais.push(novoLocal);
+            atualizarListaLocaisAdmin();
+            alert("Local cadastrado com sucesso!");
+            
+            document.getElementById('admin-nome-local').value = "";
+            document.getElementById('admin-coords').value = "";
+        }
+
+        function atualizarListaLocaisAdmin() {
+            const container = document.getElementById('lista-locais-admin');
+            container.innerHTML = bancoLocais.map(l => `
+                <div class="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border">
+                    <div>
+                        <p class="font-bold text-gray-800">${l.nome}</p>
+                        <p class="text-[10px] text-gray-400 font-mono">${l.lat}, ${l.lon}</p>
+                    </div>
+                    <span class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-black uppercase">Ativo</span>
+                </div>
+            `).join('');
+        }
+
+        // --- EXPORTAR CSV ---
+        function exportarCSV() {
             const dados = [
-                ["Prestador", "Status", "Data", "Entrada", "Saída"],
-                ["Ricardo Silva", "Ativo", "27/12/2025", "08:05", "--:--"],
-                ["Maria Oliveira", "Inativo", "20/12/2025", "09:00", "18:00"]
+                ["Prestador", "Local", "Data", "Entrada", "Saída"],
+                ["Ricardo Silva", "Escritório Central", "27/12/2025", "08:05", "17:10"],
+                ["Maria Oliveira", "Casa Norte", "26/12/2025", "09:12", "18:05"]
             ];
-
-            let csv = "\uFEFF"; // UTF-8 BOM
-            dados.forEach(row => { csv += row.join(";") + "\r\n"; });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            let csv = "\uFEFF";
+            dados.forEach(row => csv += row.join(";") + "\r\n");
+            const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", "relatorio_ponto_diario.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `relatorio_ponto_completo.csv`;
+            a.click();
         }
 
-        // Inicializar data
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            atualizarListaLocaisAdmin();
+        });
     </script>
 </body>
 </html>
